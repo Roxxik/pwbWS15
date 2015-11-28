@@ -8,9 +8,9 @@ module Data.LabeledTree(
     ) where
 
 import Data.Traversable
-import Data.Foldable
-import Control.Monad
-import Control.Applicative
+import Data.Foldable()
+import Control.Monad()
+import Control.Applicative()
 import Control.DeepSeq (NFData(rnf))
 
 data Tree k a = Node  {
@@ -67,7 +67,7 @@ flattenL :: k -> Tree k a -> [(k, a)]
 flattenL l t = (l, root) : subF
     where
         (root, subF) = reduceTree (,) g [] t
-        g l (r, s) b = (l, r) : s ++ b
+        g l' (r, s) b = (l', r) : s ++ b
 
 -- | Build a tree from a seed value
 unfoldTree :: (b -> (a, [(k, b)])) -> b -> Tree k a

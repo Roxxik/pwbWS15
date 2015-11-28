@@ -1,16 +1,16 @@
-{-# LANGUAGE TemplateHaskell, TupleSections #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections   #-}
 
-import Control.Arrow
-import Control.Monad
-import Control.Lens (makeLenses, over)
-import Data.List
-import Data.Maybe
-import Data.Function
-import Data.LabeledTree
+import           Control.Lens     (makeLenses, over)
+import           Control.Monad
+import           Data.Function
+import           Data.LabeledTree
+import           Data.List
+import           Data.Maybe
 
 data Problem = Problem { _elems :: [Element]
                        , _rules :: [Rule]
-                       , _ptime  :: Time
+                       , _ptime :: Time
                        }
     deriving (Show)
 
@@ -24,21 +24,18 @@ data Element = Element { _value  :: Value
                        }
     deriving (Show)
 
-data Rule = Rule { _inp :: Prod
-                 , _outp :: Prod
+data Rule = Rule { _inp   :: [Prod]
+                 , _outp  :: [Prod]
                  , _rtime :: Time
                  }
     deriving (Show)
 
--- TODO Prod -> [Prod]
-type Prod = [(Index, Amount)]
+type Prod = (Index, Amount)
 type Index = Int
 type Amount = Int
 type Time = Int
 type Value = Int
 
---data Tree a b = Tree a [(b, Tree a b)]
---    deriving (Show)
 
 makeLenses ''Element
 makeLenses ''Storage
@@ -56,12 +53,12 @@ parseS :: String -> Problem
 parseS = (\[w,x,y,z] -> parse (read w) (read x) (read y) (read z)) . lines
 
 parse :: [Value] -> [Amount] -> [([Index], [Index], Time)] -> Time -> Problem
-parse vs as rs t = Problem (map (uncurry Element) $ zip vs as) (map transform rs) t
+parse vs as rs = Problem (zipWith Element vs as) (map transform rs)
 
 transform :: ([Index], [Index], Time) -> Rule
 transform (i, o, t) = Rule (collect i) (collect o) t
 
-collect :: [Index] -> Prod
+collect :: [Index] -> [Prod]
 collect = liftM2 zip id (map length . group . sort)
 
 play :: Problem -> IO ()
@@ -80,7 +77,7 @@ maximumPathBy cmp = reduceTree f g z
         z = Nothing
 
         h :: (a -> a -> Ordering) -> (a, b) -> Maybe (a, b) -> (a, b)
-        h cmp = maybeF (maxBy (cmp `on` fst))
+        h cmp' = maybeF (maxBy (cmp' `on` fst))
 
         maybeF :: (a -> b -> b) ->  b -> Maybe a -> b
         maybeF = flip . maybe id
@@ -115,29 +112,29 @@ apply s r = Storage elems' time'
         mtime = takeTime (_stime s) (_rtime r)
         time' = fromMaybe 0 mtime
 
-produce :: Bool -> Prod -> [Element] -> [Element]
+produce :: Bool -> [Prod] -> [Element] -> [Element]
 produce enoughTime outp = if enoughTime then flip deliver outp else id
 
-deliver :: [Element] -> Prod -> [Element]
-deliver es p = foldl put es p
+deliver :: [Element] -> [Prod] -> [Element]
+deliver = foldl put
 
 put :: [Element] -> (Index, Amount) -> [Element]
 put es (i, a) = adjust (over amount (+ a)) i es
 
-takeRes :: [Element] -> Prod -> Maybe [Element]
-takeRes es p = foldM get es p
+takeRes :: [Element] -> [Prod] -> Maybe [Element]
+takeRes = foldM get
 
-get :: [Element] -> (Index, Amount) -> Maybe [Element]
+get :: [Element] -> Prod -> Maybe [Element]
 get es (i, a) | _amount (es !! i) >= a = Just $ adjust (over amount (subtract a)) i es
               | otherwise              = Nothing
 
 takeTime :: Time -> Time -> Maybe Time
-takeTime = msubtract
+takeTime = natSubtract
 
-msubtract :: (Num a, Ord a) => a -> a -> Maybe a
-msubtract a b = if a - b >= 0 then Just (a - b) else Nothing
+natSubtract :: (Num a, Ord a) => a -> a -> Maybe a
+natSubtract a b = if a - b >= 0 then Just (a - b) else Nothing
 
 adjust :: (a -> a) -> Int -> [a] -> [a]
 adjust f i = foldr g [] . zip [0..]
     where
-        g (i', x) xs = (if (i == i') then f x else x) : xs
+        g (i', x) xs = (if i == i' then f x else x) : xs
