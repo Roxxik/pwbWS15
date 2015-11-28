@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, TupleSections #-}
 
 import Control.Arrow
 import Control.Monad
@@ -62,7 +62,7 @@ transform :: ([Index], [Index], Time) -> Rule
 transform (i, o, t) = Rule (collect i) (collect o) t
 
 collect :: [Index] -> Prod
-collect = liftM2 zip id (map length . group)
+collect = liftM2 zip id (map length . group . sort)
 
 play :: Problem -> IO ()
 play p = do
@@ -75,7 +75,7 @@ play p = do
 maximumPathBy :: (a -> a -> Ordering) -> Tree k a -> (a,[k])
 maximumPathBy cmp = reduceTree f g z
     where
-        f root m = h cmp (root, []) m
+        f root = h cmp (root, [])
         g k (a, ks) = Just . h cmp (a, k:ks)
         z = Nothing
 
@@ -83,7 +83,7 @@ maximumPathBy cmp = reduceTree f g z
         h cmp = maybeF (maxBy (cmp `on` fst))
 
         maybeF :: (a -> b -> b) ->  b -> Maybe a -> b
-        maybeF f = flip (maybe id f)
+        maybeF = flip . maybe id
 
 maxBy :: (a -> a -> Ordering) -> a -> a -> a
 maxBy cmp x y = case cmp x y of
@@ -138,6 +138,6 @@ msubtract :: (Num a, Ord a) => a -> a -> Maybe a
 msubtract a b = if a - b >= 0 then Just (a - b) else Nothing
 
 adjust :: (a -> a) -> Int -> [a] -> [a]
-adjust f i = foldl g [] . zip [0..]
+adjust f i = foldr g [] . zip [0..]
     where
-        g xs (i', x) = (if (i == i') then f x else x) : xs
+        g (i', x) xs = (if (i == i') then f x else x) : xs

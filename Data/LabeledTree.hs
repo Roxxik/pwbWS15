@@ -2,6 +2,7 @@
 module Data.LabeledTree(
     Tree(..), Forest,
     -- * Building trees
+    flattenTreeL, flattenForestL,
     unfoldTree, unfoldForest,
     reduceTree
     ) where
@@ -55,11 +56,18 @@ instance (NFData k, NFData a) => NFData (Tree k a) where
 
 
 -- | The elements of a tree in pre-order.
-flatten :: Monoid k => Tree k a -> [(k, a)]
-flatten t = (mempty, root) : subF
+flattenTreeL :: Monoid k => Tree k a -> [(k, a)]
+flattenTreeL = flattenL mempty
+
+-- | The elements of a forest in pre-order.
+flattenForestL :: Forest k a -> [(k, a)]
+flattenForestL = concatMap (uncurry' flattenL)
+
+flattenL :: k -> Tree k a -> [(k, a)]
+flattenL l t = (l, root) : subF
     where
         (root, subF) = reduceTree (,) g [] t
-        g k c b = (k, fst c) : snd c ++ b
+        g l (r, s) b = (l, r) : s ++ b
 
 -- | Build a tree from a seed value
 unfoldTree :: (b -> (a, [(k, b)])) -> b -> Tree k a
