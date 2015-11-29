@@ -1,9 +1,9 @@
-
 import           Data.Function (on)
 
 import           Data.LabeledTree
 import           Logic
 import           Parse
+
 
 main :: IO ()
 main = parseM >>= play
@@ -16,7 +16,7 @@ play p = do
     print (maximumPathBy (compare `on` getScore) t)
 
 
-maximumPathBy :: (a -> a -> Ordering) -> Tree k a -> (a,[k])
+maximumPathBy :: (a -> a -> Ordering) -> Tree k a -> (a, [k])
 maximumPathBy cmp = reduceTree f g z
     where
         f root = h cmp (root, [])

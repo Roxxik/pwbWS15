@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Logic (
-    Problem(..), Storage(..), Element(..), Rule(..), Prod, Index, Amount, Time, Value,
+    Problem(..), Storage(..), Element(..), Rule(..), Prod, Score, Index, Amount, Time, Value,
     step, getScore, mkStorage
 ) where
 
@@ -31,6 +31,7 @@ data Rule = Rule { inp   :: [Prod]
     deriving (Show)
 
 type Prod = (Index, Amount)
+type Score = Int
 type Index = Int
 type Amount = Int
 type Time = Int
